@@ -1,0 +1,15 @@
+# Environment variables and secrets
+.env
+.env.*
+
+# Keep the example file only if it contains placeholders, not real secrets
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Compiled output
+dist/
+
+# Logs
+*.log
