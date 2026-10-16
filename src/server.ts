@@ -7,10 +7,15 @@ import authenticate from "./middleware/auth";
 import pool from "./db";
 import redis from "./redis";
 import priceSimulator from "./services/priceSimulator";
+import portfolioEventsRouter from "./routes/portfolioEvents";
+import { createServer } from "http";
+import WebSocket, { WebSocketServer } from "ws";
+import { subscriber } from "./redis";
 const app = express();
-
+const server = createServer(app);
+const wss = new WebSocketServer({ server });
 const PORT = process.env.PORT || 4000;
-
+const clientSubscriptions = new Map<WebSocket, Set<string>>();
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -545,7 +550,67 @@ app.post("/assets/:symbol/simulate", async (req: Request, res: Response) => {
     });
   }
 });
-app.listen(PORT, async () => {
+
+app.use("/portfolios", portfolioEventsRouter);
+
+wss.on("connection", function (ws) {
+  console.log("WebSocket client connected");
+  clientSubscriptions.set(ws, new Set<string>());
+  ws.on("message", (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+
+      if (
+        (message.type === "SUBSCRIBE" || message.type === "UNSUBSCRIBE") &&
+        typeof message.symbol === "string"
+      ) {
+        const symbol = message.symbol.trim().toUpperCase();
+
+        if (!symbol) return;
+
+        const subscriptions = clientSubscriptions.get(ws);
+
+        if (message.type === "SUBSCRIBE") {
+          subscriptions?.add(symbol);
+          console.log(`Client subscribed to ${symbol}`);
+        } else {
+          subscriptions?.delete(symbol);
+          console.log(`Client unsubscribed from ${symbol}`);
+        }
+      }
+    } catch (error) {
+      clientSubscriptions.delete(ws);
+      console.error("Invalid WebSocket message");
+    }
+  });
+  ws.on("error", console.error);
+
+  ws.on("close", function () {
+    console.log("WebSocket client disconnected");
+  });
+});
+subscriber.on("message", (channel, message) => {
+  if (channel !== "market:prices") return;
+
+  try {
+    const event = JSON.parse(message);
+    const symbol = event.symbol?.toUpperCase();
+
+    if (!symbol) return;
+
+    wss.clients.forEach((client) => {
+      if (
+        client.readyState === WebSocket.OPEN &&
+        clientSubscriptions.get(client)?.has(symbol)
+      ) {
+        client.send(message);
+      }
+    });
+  } catch (error) {
+    console.error("Invalid price event received from Redis");
+  }
+});
+server.listen(PORT, async () => {
   console.log(`FinPulse server running on port ${PORT}`);
 
   await testDatabaseConnection();
