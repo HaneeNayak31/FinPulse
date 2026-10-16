@@ -1,10 +1,12 @@
 import "dotenv/config";
-import express, { Request, response, Response } from "express";
+import express, { Request, Response } from "express";
 import { testDatabaseConnection } from "./db";
 import { register } from "./routes/register";
 import { login } from "./routes/login";
 import authenticate from "./middleware/auth";
 import pool from "./db";
+import redis from "./redis";
+import priceSimulator from "./services/priceSimulator";
 const app = express();
 
 const PORT = process.env.PORT || 4000;
@@ -91,26 +93,34 @@ app.get(
   "/portfolios/:id",
   authenticate,
   async (req: Request, res: Response) => {
-    let userID = res.locals.user.id;
-    const id = Number(req.params.id);
+    try {
+      let userID = res.locals.user.id;
+      const id = Number(req.params.id);
 
-    if (!Number.isInteger(id) || id <= 0) {
-      return res.status(400).json({
-        message: "Invalid portfolio ID",
+      if (!Number.isInteger(id) || id <= 0) {
+        return res.status(400).json({
+          message: "Invalid portfolio ID",
+        });
+      }
+      let query = `SELECT id,name,created_at from portfolios WHERE id = $1 AND user_id = $2`;
+      let portfolio = await pool.query<{
+        id: number;
+        name: string;
+        created_at: string;
+      }>(query, [id, userID]);
+      if (portfolio.rows.length === 0) {
+        return res.status(404).json({
+          message: "no portfolio found",
+        });
+      }
+      return res.status(200).json({ portfolios: portfolio.rows[0] });
+    } catch (error) {
+      console.error("Error", error);
+      return res.json({
+        success: false,
+        message: "Server Error",
       });
     }
-    let query = `SELECT id,name,created_at from portfolios WHERE id = $1 AND user_id = $2`;
-    let portfolio = await pool.query<{
-      id: number;
-      name: string;
-      created_at: string;
-    }>(query, [id, userID]);
-    if (portfolio.rows.length === 0) {
-      return res.status(404).json({
-        message: "no portfolio found",
-      });
-    }
-    return res.status(200).json({ portfolios: portfolio.rows[0] });
   },
 );
 
@@ -152,57 +162,133 @@ app.post(
         });
       }
 
-      const checkifCorrectUser = await pool.query<{ user_id: number }>(
-        `SELECT user_id from portfolios WHERE id = $1`,
-        [portfolioId],
-      );
-      if (checkifCorrectUser.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Portfolio not found",
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        //verify portfolio ownership
+        const checkifCorrectUser = await client.query<{ user_id: number }>(
+          `SELECT user_id FROM portfolios WHERE id = $1`,
+          [portfolioId],
+        );
+        if (checkifCorrectUser.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return res.status(404).json({
+            success: false,
+            message: "Portfolio not found",
+          });
+        }
+        if (checkifCorrectUser.rows[0].user_id !== res.locals.user.id) {
+          await client.query("ROLLBACK");
+          return res.status(403).json({
+            success: false,
+            message: "Not authorized",
+          });
+        }
+        //fetching asset price
+        const checkifCorrectPrice = await client.query<{
+          current_price: string;
+        }>(`SELECT current_price FROM assets WHERE id = $1`, [assetId]);
+
+        if (checkifCorrectPrice.rows.length === 0) {
+          await client.query("ROLLBACK");
+          return res.status(404).json({
+            success: false,
+            message: "Asset not found",
+          });
+        }
+        const price = Number(checkifCorrectPrice.rows[0].current_price);
+        let newOrder;
+        //BUY
+        if (orderType == "BUY") {
+          //INSERT ORDER
+          // 1. Insert the order inside the transaction
+          const orderResult = await client.query(
+            `INSERT INTO orders (portfolio_id, asset_id, type, quantity, price)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id, portfolio_id, asset_id,
+             type, quantity, price, created_at`,
+            [portfolioId, assetId, orderType, quantity, price],
+          );
+
+          if (orderResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+            throw new Error("Order was not created");
+          }
+
+          newOrder = orderResult.rows[0];
+          // 2. Create a holding or update the existing holding
+          await client.query(
+            `INSERT INTO holdings (portfolio_id, asset_id, quantity, average_price) VALUES ($1, $2, $3, $4) ON CONFLICT (portfolio_id, asset_id) DO UPDATE SET average_price = ( holdings.quantity * holdings.average_price
+            + EXCLUDED.quantity * EXCLUDED.average_price) / (holdings.quantity + EXCLUDED.quantity), quantity = holdings.quantity + EXCLUDED.quantity`,
+            [portfolioId, assetId, quantity, price],
+          );
+        }
+        if (orderType === "SELL") {
+          // 1. Find and lock the holding for this portfolio and asset
+          const holdingResult = await client.query<{
+            quantity: string;
+          }>(
+            `SELECT quantity
+     FROM holdings
+     WHERE portfolio_id = $1 AND asset_id = $2
+     FOR UPDATE`,
+            [portfolioId, assetId],
+          );
+
+          // 2. Reject if the user doesn't own this asset
+          if (holdingResult.rows.length === 0) {
+            await client.query("ROLLBACK");
+
+            return res.status(400).json({
+              success: false,
+              message: "No holding exists for this asset",
+            });
+          }
+
+          const availableQuantity = Number(holdingResult.rows[0].quantity);
+
+          // 3. Prevent selling more than the user owns
+          if (quantity > availableQuantity) {
+            await client.query("ROLLBACK");
+            return res.status(400).json({
+              success: false,
+              message: "Insufficient quantity to sell",
+            });
+          }
+
+          // 4. Insert the SELL order
+          const orderResult = await client.query(
+            `INSERT INTO orders (portfolio_id, asset_id, type, quantity, price)
+             VALUES ($1, $2, $3, $4, $5) RETURNING id, portfolio_id, asset_id,
+             type, quantity, price, created_at`,
+            [portfolioId, assetId, orderType, quantity, price],
+          );
+
+          if (orderResult.rows.length === 0) {
+            throw new Error("Sell order was not created");
+          }
+
+          newOrder = orderResult.rows[0];
+
+          // 5. Reduce the holding quantity
+          await client.query(
+            `UPDATE holdings SET quantity = quantity - $1 WHERE portfolio_id = $2 AND asset_id = $3`,
+            [quantity, portfolioId, assetId],
+          );
+        }
+
+        await client.query("COMMIT");
+
+        return res.status(201).json({
+          success: true,
+          message: "Order created successfully",
+          order: newOrder,
         });
+      } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+      } finally {
+        client.release();
       }
-      if (checkifCorrectUser.rows[0].user_id !== res.locals.user.id) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized",
-        });
-      }
-      const checkifCorrectPrice = await pool.query<{ current_price: string }>(
-        `SELECT current_price FROM assets WHERE id = $1`,
-        [assetId],
-      );
-
-      if (checkifCorrectPrice.rows.length === 0) {
-        return res.status(404).json({
-          success: false,
-          message: "Asset not found",
-        });
-      }
-
-      const price = Number(checkifCorrectPrice.rows[0].current_price);
-
-      const query = `INSERT INTO orders(portfolio_id,asset_id,type,quantity,price) VALUES($1,$2,$3,$4,$5) RETURNING id, portfolio_id, asset_id, type, quantity, price, created_at`;
-
-      const newOrder = await pool.query<{}>(query, [
-        portfolioId,
-        assetId,
-        orderType,
-        quantity,
-        price,
-      ]);
-
-      if (newOrder.rows.length === 0) {
-        return res.status(404).json({
-          message: "no order found",
-        });
-      }
-
-      return res.status(201).json({
-        success: true,
-        message: "order created successfully",
-        order: newOrder.rows[0],
-      });
     } catch (error) {
       console.error("Error", error);
       return res.status(500).json({
@@ -326,6 +412,139 @@ ORDER BY a.symbol`,
     }
   },
 );
+
+app.get("/assets", async (req: Request, res: Response) => {
+  try {
+    const key = "assets:all";
+    const cachedAsset = await redis.get(key);
+    if (cachedAsset) {
+      console.log("CACHE HIT:", key);
+      return res.status(200).json({
+        success: true,
+        assets: JSON.parse(cachedAsset),
+      });
+    }
+    console.log("CACHE MISS:", key);
+    const query = `SELECT * FROM assets`;
+    const assetResult = await pool.query<{
+      id: number;
+      symbol: string;
+      name: string;
+      current_price: number;
+      created_at: string;
+    }>(query);
+
+    if (assetResult.rows.length === 0) {
+      return res.status(200).json({
+        success: false,
+        assets: [],
+      });
+    }
+
+    const assets = assetResult.rows;
+    await redis.set(key, JSON.stringify(assets), "EX", 30);
+
+    return res.status(200).json({
+      success: true,
+      assets,
+    });
+  } catch (error) {
+    console.error("Error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+
+app.get("/assets/:symbol", async (req: Request, res: Response) => {
+  try {
+    const symbol = String(req.params.symbol).toUpperCase();
+    const key = `asset:${symbol}`;
+    if (!symbol || !/^[A-Z0-9.-]+$/.test(symbol)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid asset symbol",
+      });
+    }
+    const cachedAsset = await redis.get(key);
+    if (cachedAsset) {
+      console.log("CACHE HIT:", key);
+      return res.status(200).json({
+        success: true,
+        asset: JSON.parse(cachedAsset),
+      });
+    }
+
+    console.log("CACHE MISS:", key);
+    const query = `SELECT id, symbol, name, current_price FROM assets WHERE symbol = $1`;
+    const assetResult = await pool.query<{
+      id: number;
+      symbol: string;
+      name: string;
+      current_price: number;
+    }>(query, [symbol]);
+
+    if (assetResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Asset not found",
+      });
+    }
+
+    const asset = assetResult.rows[0];
+    await redis.set(key, JSON.stringify(asset), "EX", 30);
+
+    return res.status(200).json({
+      success: true,
+      asset,
+    });
+  } catch (error) {
+    console.error("Error", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
+
+app.post("/assets/:symbol/simulate", async (req: Request, res: Response) => {
+  try {
+    const symbol = String(req.params.symbol);
+    const asset = await priceSimulator(symbol);
+    return res.status(200).json({
+      success: true,
+      message: "Price updated successfully",
+      asset,
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === "Invalid Asset Symbol") {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      if (
+        error.message === "No Asset found" ||
+        error.message === "Asset not found"
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: "Asset not found",
+        });
+      }
+    }
+
+    console.error(error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+});
 app.listen(PORT, async () => {
   console.log(`FinPulse server running on port ${PORT}`);
 

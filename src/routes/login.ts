@@ -54,7 +54,6 @@ export async function login(req: Request, res: Response) {
       expiresIn: "1d",
     },
   );
-
   res.status(200).send({
     success: true,
     message: "user loggedin successfully",
