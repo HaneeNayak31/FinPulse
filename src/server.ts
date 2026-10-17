@@ -141,12 +141,14 @@ app.post(
 
       if (!Number.isInteger(portfolioId) || portfolioId <= 0) {
         return res.status(400).json({
+          error: "INVALID_PORTFOLIO_ID",
           message: "Invalid portfolio ID",
         });
       }
 
       if (!Number.isInteger(assetId) || assetId <= 0) {
         return res.status(400).json({
+          error: "INVALID_ASSET_ID",
           message: "Invalid asset ID",
         });
       }
@@ -157,12 +159,14 @@ app.post(
         quantity <= 0
       ) {
         return res.status(400).json({
+          error: "INVALID_QUANTITY",
           message: "Quantity must be greater than 0",
         });
       }
 
       if (orderType !== "BUY" && orderType !== "SELL") {
         return res.status(400).json({
+          error: "INVALID_ORDER_TYPE",
           message: "Order type must be BUY or SELL",
         });
       }
@@ -178,14 +182,14 @@ app.post(
         if (checkifCorrectUser.rows.length === 0) {
           await client.query("ROLLBACK");
           return res.status(404).json({
-            success: false,
+            error: "PORTFOLIO_NOT_FOUND",
             message: "Portfolio not found",
           });
         }
         if (checkifCorrectUser.rows[0].user_id !== res.locals.user.id) {
           await client.query("ROLLBACK");
           return res.status(403).json({
-            success: false,
+            error: "FORBIDDEN",
             message: "Not authorized",
           });
         }
@@ -197,7 +201,7 @@ app.post(
         if (checkifCorrectPrice.rows.length === 0) {
           await client.query("ROLLBACK");
           return res.status(404).json({
-            success: false,
+            error: "ASSET_NOT_FOUND",
             message: "Asset not found",
           });
         }
@@ -244,8 +248,8 @@ app.post(
             await client.query("ROLLBACK");
 
             return res.status(400).json({
-              success: false,
-              message: "No holding exists for this asset",
+              error: "HOLDING_NOT_FOUND",
+              message: "No holding exists for this asset.",
             });
           }
 
@@ -255,8 +259,8 @@ app.post(
           if (quantity > availableQuantity) {
             await client.query("ROLLBACK");
             return res.status(400).json({
-              success: false,
-              message: "Insufficient quantity to sell",
+              error: "INSUFFICIENT_HOLDINGS",
+              message: "Cannot sell more shares than owned.",
             });
           }
 
@@ -311,6 +315,23 @@ app.get(
     try {
       const portfolioId = Number(req.params.id);
       const userId = res.locals.user.id;
+      const page = Number(req.query.page ?? 1);
+      const limit = Number(req.query.limit ?? 20);
+
+      if (
+        !Number.isInteger(page) ||
+        page < 1 ||
+        !Number.isInteger(limit) ||
+        limit < 1 ||
+        limit > 100
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: "Page must be positive and limit must be between 1 and 100",
+        });
+      }
+
+      const offset = (page - 1) * limit;
       if (!Number.isInteger(portfolioId) || portfolioId <= 0) {
         return res.status(400).json({
           message: "Invalid portfolio ID",
@@ -330,24 +351,20 @@ app.get(
       }
 
       const getOrders = await pool.query(
-        `SELECT o.id, o.portfolio_id, o.asset_id,
-          o.type, o.quantity, o.price, o.created_at
-   FROM orders AS o
-   INNER JOIN portfolios AS p
-     ON p.id = o.portfolio_id
-   WHERE p.id = $1 AND p.user_id = $2
-   ORDER BY o.created_at DESC, o.id DESC`,
-        [portfolioId, userId],
+        `SELECT o.id, o.portfolio_id, o.asset_id, o.type, o.quantity, o.price, o.created_at FROM orders AS o INNER JOIN portfolios AS p ON p.id = o.portfolio_id WHERE p.id = $1 AND p.user_id = $2 ORDER BY o.created_at DESC, o.id DESC LIMIT $3 OFFSET $4`,
+        [portfolioId, userId, limit, offset],
       );
-      if (getOrders.rows.length === 0) {
-        return res.status(200).json({
-          success: true,
-          orders: [],
-        });
-      }
+      // if (getOrders.rows.length === 0) {
+      //   return res.status(200).json({
+      //     success: true,
+      //     orders: [],
+      //   });
+      // }
       return res.status(200).json({
         success: true,
-        message: "Order fetched successfully",
+        message: "Orders fetched successfully",
+        page,
+        limit,
         orders: getOrders.rows,
       });
     } catch (error) {
@@ -589,6 +606,7 @@ wss.on("connection", function (ws) {
     console.log("WebSocket client disconnected");
   });
 });
+
 subscriber.on("message", (channel, message) => {
   if (channel !== "market:prices") return;
 
@@ -610,6 +628,7 @@ subscriber.on("message", (channel, message) => {
     console.error("Invalid price event received from Redis");
   }
 });
+
 server.listen(PORT, async () => {
   console.log(`FinPulse server running on port ${PORT}`);
 
