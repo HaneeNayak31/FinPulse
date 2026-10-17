@@ -1,7 +1,7 @@
 import Redis from "ioredis";
-import "dotenv/config";
+import env from "./config/env";
 
-const redis = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+const redis = new Redis(env.redisUrl);
 
 redis.on("connect", () => {
   console.log("Redis connected");
@@ -12,9 +12,7 @@ redis.on("error", (error) => {
 });
 export default redis;
 
-export const subscriber = new Redis(
-  process.env.REDIS_URL || "redis://localhost:6379",
-);
+export const subscriber = new Redis(env.redisUrl);
 
 subscriber.on("connect", () => console.log("Redis subscriber connected"));
 

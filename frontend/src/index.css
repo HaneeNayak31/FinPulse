@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+html.dark,
+body.dark,
+[data-theme="dark"],
+.dark {
+  /* Dark Theme: Obsidian Terminal */
+  --bg-main: #10110F;
+  --bg-sidebar: #141512;
+  --surface-primary: #191A17;
+  --surface-elevated: #20211D;
+  --border-color: #2D2E28;
+  --border-subtle: #22231E;
+  --border-strong: #3E4037;
+  --text-primary: #E9E6DE;
+  --text-secondary: #A09E94;
+  --text-muted: #858477;
+  --brand-amber: #E5B15C;
+  --brand-amber-hover: #F0C574;
+  --brand-amber-muted: rgba(229, 177, 92, 0.15);
+  --brand-amber-border: rgba(229, 177, 92, 0.3);
+  --color-positive: #83AA8B;
+  --color-positive-dim: rgba(131, 170, 139, 0.15);
+  --color-positive-text: #83AA8B;
+  --color-negative: #D9857B;
+  --color-negative-dim: rgba(217, 133, 123, 0.15);
+  --color-negative-text: #D9857B;
+  --focus-ring: #E5B15C;
+  --scrollbar-track: #10110F;
+  --scrollbar-thumb: #2B2C26;
+  --scrollbar-thumb-hover: #3E4037;
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --elevated-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+html.light,
+body.light,
+[data-theme="light"],
+.light {
+  /* Light Theme: Warm Ledger */
+  --bg-main: #F6F3EC;
+  --bg-sidebar: #EFEAE0;
+  --surface-primary: #FFFEFA;
+  --surface-elevated: #FFFFFF;
+  --border-color: #E4DED2;
+  --border-subtle: #EDE7DC;
+  --border-strong: #C8C2B7;
+  --text-primary: #252820;
+  --text-secondary: #5C5E55;
+  --text-muted: #6B6D62;
+  --brand-amber: #98651C;
+  --brand-amber-hover: #805416;
+  --brand-amber-muted: rgba(152, 101, 28, 0.08);
+  --brand-amber-border: rgba(152, 101, 28, 0.20);
+  --color-positive: #34734A;
+  --color-positive-dim: rgba(52, 115, 74, 0.08);
+  --color-positive-text: #28603C;
+  --color-negative: #B63F37;
+  --color-negative-dim: rgba(182, 63, 55, 0.08);
+  --color-negative-text: #A8362E;
+  --focus-ring: #98651C;
+  --scrollbar-track: #F6F3EC;
+  --scrollbar-thumb: #D8D2C4;
+  --scrollbar-thumb-hover: #C5BFB0;
+  --card-shadow: 0 1px 3px 0 rgba(37, 40, 32, 0.04), 0 1px 2px -1px rgba(37, 40, 32, 0.02);
+  --elevated-shadow: 0 4px 12px -2px rgba(37, 40, 32, 0.08), 0 2px 6px -1px rgba(37, 40, 32, 0.04);
+  color-scheme: light;
+}
+
+* {
+  border-color: var(--border-color);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+/* Tabular figures for financial numbers */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Precision scrollbar for both themes */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Subtle focus ring */
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

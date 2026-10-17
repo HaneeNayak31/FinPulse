@@ -1,9 +1,10 @@
 import { Pool } from "pg";
+import env from "./config/env";
 
-console.log("DATABASE_URL exists:", !!process.env.DATABASE_URL);
+console.log("DB Pool initialized with DB URL:", env.databaseUrl.replace(/:[^:@]+@/, ":***@"));
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: env.databaseUrl,
 });
 
 export async function testDatabaseConnection() {

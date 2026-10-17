@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { Secret, JwtPayload } from "jsonwebtoken";
-import "dotenv/config";
+import env from "../config/env";
 
-const jwtSecret = process.env.JWT_SECRET;
+const jwtSecret = env.jwtSecret;
 
 const authenticate = (req: Request, res: Response, next: NextFunction) => {
   try {
