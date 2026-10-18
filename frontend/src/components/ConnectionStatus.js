@@ -9,7 +9,7 @@ export const ConnectionStatus = ({ compact = false, className, }) => {
             color: 'bg-sage-dim text-sage-text border-sage/30',
             dot: 'bg-sage animate-pulse-subtle',
             label: 'CONNECTED',
-            sublabel: 'WebSocket streaming active',
+            sublabel: 'Live updates active',
             icon: Wifi,
         },
         Connecting: {

@@ -116,12 +116,29 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!response.ok) {
-    let errorMessage = `Request failed with status ${response.status}`;
-    if (typeof responseData === 'string' && responseData.trim()) {
-      errorMessage = responseData;
+    let errorMessage = '';
+    if (typeof responseData === 'string' && responseData.trim() && !responseData.trim().startsWith('<')) {
+      errorMessage = responseData.trim();
     } else if (responseData && typeof responseData === 'object') {
-      errorMessage = responseData.message || responseData.error || errorMessage;
+      errorMessage = responseData.message || responseData.error || '';
     }
+
+    if (!errorMessage) {
+      if (response.status === 502 || response.status === 503 || response.status === 504) {
+        errorMessage = 'FinPulse backend service is currently unreachable (502 Gateway). Ensure the server is running on port 4000.';
+      } else if (response.status === 429) {
+        errorMessage = 'Too many requests. Please wait a few moments before retrying.';
+      } else if (response.status === 401) {
+        errorMessage = 'Invalid email or password.';
+      } else if (response.status === 400) {
+        errorMessage = 'Invalid request parameters. Please verify input fields.';
+      } else if (response.status === 500) {
+        errorMessage = 'Internal server error. Please try again later.';
+      } else {
+        errorMessage = `Request failed with status ${response.status}`;
+      }
+    }
+
     throw new ApiError(response.status, errorMessage, responseData);
   }
 

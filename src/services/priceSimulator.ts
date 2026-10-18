@@ -36,7 +36,11 @@ const priceSimulator = async (symbol: string) => {
   if (updatePrice.rows.length === 0) {
     throw new Error("Asset not found");
   }
-  await redis.del(key, "assets:all");
+  try {
+    await redis.del(key, "assets:all");
+  } catch {
+    // Ignore Redis eviction error if offline
+  }
 
   const updatedAsset = updatePrice.rows[0];
 
@@ -47,7 +51,11 @@ const priceSimulator = async (symbol: string) => {
     timestamp: new Date().toISOString(),
   };
 
-  await redis.publish("market:prices", JSON.stringify(event));
+  try {
+    await redis.publish("market:prices", JSON.stringify(event));
+  } catch {
+    // Ignore Redis publish error if offline
+  }
 
   return updatedAsset;
 };

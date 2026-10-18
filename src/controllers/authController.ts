@@ -9,8 +9,8 @@ import {
 } from "../services/authService";
 
 export async function loginHandler(req: Request, res: Response) {
-  let email: string = req.body.email;
-  let password: string = req.body.password;
+  const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+  const password = typeof req.body?.password === "string" ? req.body.password : "";
 
   if (!email || !password) {
     return res.status(400).send("all the fields are required");
@@ -55,9 +55,9 @@ export async function loginHandler(req: Request, res: Response) {
 
 export async function registerHandler(req: Request, res: Response) {
   try {
-    const username: string = req.body.username;
-    const email: string = req.body.email;
-    const password: string = req.body.password;
+    const username = typeof req.body?.username === "string" ? req.body.username.trim() : "";
+    const email = typeof req.body?.email === "string" ? req.body.email.trim() : "";
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
     if (!email || !username || !password) {
       return res.status(400).send("all fields are required");
     }

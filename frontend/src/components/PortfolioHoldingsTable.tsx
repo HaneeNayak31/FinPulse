@@ -44,17 +44,17 @@ export const PortfolioHoldingsTable: React.FC<PortfolioHoldingsTableProps> = ({
           <Inbox className="w-5 h-5" />
         </div>
         <h3 className="text-sm font-semibold text-text-primary mb-1">
-          No Holdings in this Book
+          No positions yet
         </h3>
         <p className="text-xs text-text-muted max-w-sm mx-auto mb-4">
-          Execute a simulated market order to acquire shares of AAPL, MSFT, or GOOGL.
+          Place your first paper trade to start tracking performance.
         </p>
         <button
           onClick={onOpenOrderDialog}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs font-mono font-medium text-black bg-amber hover:bg-amber-hover rounded transition-colors"
         >
           <Plus className="w-4 h-4" />
-          <span>Place First Buy Order</span>
+          <span>Place first trade</span>
         </button>
       </div>
     );
@@ -65,10 +65,10 @@ export const PortfolioHoldingsTable: React.FC<PortfolioHoldingsTableProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-border-subtle">
         <div>
           <h2 className="text-sm font-semibold text-text-primary tracking-wide">
-            Portfolio Holdings Ledger
+            Holdings
           </h2>
           <p className="text-[11px] text-text-muted mt-0.5">
-            Real-time equity positions, book basis, and computed return
+            Current positions and performance
           </p>
         </div>
         <button
@@ -76,7 +76,7 @@ export const PortfolioHoldingsTable: React.FC<PortfolioHoldingsTableProps> = ({
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium text-amber bg-amber-muted border border-amber/40 hover:border-amber rounded transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>New Order</span>
+          <span>Place trade</span>
         </button>
       </div>
 
@@ -84,13 +84,13 @@ export const PortfolioHoldingsTable: React.FC<PortfolioHoldingsTableProps> = ({
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-border-subtle bg-surface-elevated/40 text-[10px] font-mono uppercase tracking-wider text-text-muted">
-              <th className="py-3 px-4 font-medium">Instrument</th>
+              <th className="py-3 px-4 font-medium">Asset</th>
               <th className="py-3 px-4 font-medium text-right">Shares</th>
-              <th className="py-3 px-4 font-medium text-right">Avg Purchase</th>
+              <th className="py-3 px-4 font-medium text-right">Avg. price</th>
               <th className="py-3 px-4 font-medium text-right">Current Price</th>
               <th className="py-3 px-4 font-medium text-right">Market Value</th>
               <th className="py-3 px-4 font-medium text-right">Unrealized P&L</th>
-              <th className="py-3 px-4 font-medium text-center">Trade Actions</th>
+              <th className="py-3 px-4 font-medium text-center">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border-subtle font-mono">

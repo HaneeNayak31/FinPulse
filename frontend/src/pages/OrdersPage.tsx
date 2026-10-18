@@ -43,7 +43,7 @@ export const OrdersPage: React.FC = () => {
     <>
       <AppHeader
         title="Execution Orders"
-        subtitle="Chronological transaction audit trail for the selected portfolio"
+        subtitle="Buys and sells for the selected portfolio"
         onOpenMobileMenu={onOpenMobileMenu}
       >
         <PortfolioSelector />
@@ -80,7 +80,7 @@ export const OrdersPage: React.FC = () => {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-black bg-amber hover:bg-amber-hover rounded transition-colors shadow-subtle"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>New Order</span>
+              <span>Place trade</span>
             </button>
           </div>
         </div>

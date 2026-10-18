@@ -18,8 +18,6 @@ const authenticate = (req: Request, res: Response, next: NextFunction) => {
       id: number;
     };
     res.locals.user = decoded;
-    console.log("Token is valid! Payload:", decoded);
-    console.log(`Welcome username ${decoded.id} `);
     next();
   } catch (error) {
     console.error("Authentication error:", error);

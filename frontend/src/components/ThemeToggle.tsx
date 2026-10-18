@@ -21,8 +21,8 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className }) => {
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber',
         className
       )}
-      title={`Switch to ${isDark ? 'Warm Ledger (Light)' : 'Obsidian Terminal (Dark)'} theme`}
-      aria-label={`Current theme: ${isDark ? 'Obsidian Terminal (Dark)' : 'Warm Ledger (Light)'}. Click to switch theme.`}
+    title={`Switch to ${isDark ? 'light' : 'dark'} theme`}
+    aria-label={`Current theme: ${isDark ? 'dark' : 'light'}. Click to switch theme.`}
     >
       {isDark ? (
         <>

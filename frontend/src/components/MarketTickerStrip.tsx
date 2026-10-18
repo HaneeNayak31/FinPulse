@@ -48,9 +48,16 @@ export const MarketTickerStrip: React.FC = () => {
 
   return (
     <div
-      className="w-full overflow-hidden bg-surface/60 border-b border-border-subtle backdrop-blur-sm"
-      aria-label="Live market ticker"
+      className="w-full overflow-hidden bg-surface/80 border-b border-border-subtle backdrop-blur-sm flex items-center"
+      aria-label="Market prices"
     >
+      <div className="flex-shrink-0 px-3 py-1.5 bg-surface-elevated border-r border-border-subtle flex items-center gap-1.5 z-10">
+        <span className="w-1.5 h-1.5 rounded-full bg-amber animate-pulse" />
+        <span className="text-[10px] font-mono uppercase tracking-wider text-text-muted font-medium">
+          MARKET PRICES
+        </span>
+      </div>
+      <div className="overflow-hidden flex-1">
       <div
         className="flex items-center whitespace-nowrap"
         style={{ animation: 'tickerScroll 38s linear infinite' }}
@@ -78,6 +85,7 @@ export const MarketTickerStrip: React.FC = () => {
             </div>
           );
         })}
+      </div>
       </div>
 
       <style>{`

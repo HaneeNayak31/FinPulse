@@ -69,7 +69,7 @@ export const PortfolioAllocation: React.FC<PortfolioAllocationProps> = ({
                 Asset Allocation
               </h2>
               <p className="text-[11px] text-text-muted mt-0.5">
-                Relative portfolio weight of owned positions
+                Portfolio weight by position
               </p>
             </div>
           </div>
@@ -85,17 +85,17 @@ export const PortfolioAllocation: React.FC<PortfolioAllocationProps> = ({
               <Layers className="w-5 h-5" />
             </div>
             <p className="text-xs font-semibold text-text-primary mb-1">
-              No Capital Allocated
+              No positions yet
             </p>
             <p className="text-[11px] text-text-muted max-w-xs mx-auto mb-4 leading-relaxed">
-              Holdings allocation weights will calculate automatically once you execute paper purchase orders.
+              Your allocation will appear here after you place your first trade.
             </p>
             {onOpenOrderDialog && (
               <button
                 onClick={onOpenOrderDialog}
                 className="px-3.5 py-1.5 text-xs font-mono font-medium text-black bg-amber hover:bg-amber-hover rounded transition-colors"
               >
-                Execute Initial Order
+                Place first trade
               </button>
             )}
           </div>
@@ -138,7 +138,7 @@ export const PortfolioAllocation: React.FC<PortfolioAllocationProps> = ({
 
               {/* Center Readout */}
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-[9px] font-mono uppercase tracking-widest text-text-muted">Total Equity</span>
+                <span className="text-[9px] font-mono uppercase tracking-widest text-text-muted">Market value</span>
                 <span className="text-xs sm:text-sm font-mono font-bold text-text-primary tabular-nums">
                   {formatCurrency(totalMarketValue)}
                 </span>
@@ -191,7 +191,7 @@ export const PortfolioAllocation: React.FC<PortfolioAllocationProps> = ({
       </div>
 
       <div className="pt-3 mt-4 border-t border-border-subtle text-[11px] font-mono text-text-muted flex items-center justify-between">
-        <span>Holdings Reconciled</span>
+        <span>Allocation</span>
         <span className="text-text-primary font-medium">
           {totalMarketValue > 0 ? '100.00% Net Weight' : 'Unfunded'}
         </span>

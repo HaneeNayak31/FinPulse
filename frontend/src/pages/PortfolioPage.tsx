@@ -78,8 +78,8 @@ export const PortfolioPage: React.FC = () => {
   return (
     <>
       <AppHeader
-        title="Portfolio Ledger"
-        subtitle="Audited asset balances, average fill prices, and order book transactions"
+        title="Portfolio"
+        subtitle="Holdings, performance, and orders"
         onOpenMobileMenu={onOpenMobileMenu}
       >
         <PortfolioSelector />
@@ -88,11 +88,11 @@ export const PortfolioPage: React.FC = () => {
       <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto">
         {!isLoadingPortfolios && portfolios.length === 0 ? (
           <EmptyState
-            title="No Investment Book Initialized"
-            description="Establish a portfolio book to start purchasing equity shares and auditing performance metrics."
+            title="Create your first portfolio"
+            description="Start tracking positions and performance with a paper-trading portfolio."
             icon={Briefcase}
             action={{
-              label: 'Create Portfolio',
+              label: 'Create portfolio',
               onClick: () => setCreatePortfolioOpen(true),
             }}
           />
@@ -106,11 +106,11 @@ export const PortfolioPage: React.FC = () => {
                     {activePortfolio?.name || 'Selected Portfolio'}
                   </h2>
                   <span className="text-[10px] font-mono text-amber border border-amber/30 bg-amber-muted px-1.5 py-0.2 rounded">
-                    BOOK ID #{activePortfolio?.id}
+                    Portfolio #{activePortfolio?.id}
                   </span>
                 </div>
                 <p className="text-[11px] text-text-muted font-mono mt-0.5">
-                  Established {activePortfolio?.created_at ? new Date(activePortfolio.created_at).toLocaleDateString() : '—'} · Real-time P&L Audit
+                  Created {activePortfolio?.created_at ? new Date(activePortfolio.created_at).toLocaleDateString() : '—'}
                 </p>
               </div>
 
@@ -132,7 +132,7 @@ export const PortfolioPage: React.FC = () => {
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-bold text-black bg-amber hover:bg-amber-hover rounded transition-colors shadow-subtle"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Execute Order</span>
+                  <span>Place trade</span>
                 </button>
               </div>
             </div>

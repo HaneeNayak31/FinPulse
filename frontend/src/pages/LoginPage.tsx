@@ -12,31 +12,69 @@ export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const from = (location.state as any)?.from?.pathname || '/dashboard';
 
+  const validateEmail = (val: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (emailError) setEmailError(null);
+    if (formError) setFormError(null);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (passwordError) setPasswordError(null);
+    if (formError) setFormError(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      setError('Both email and password are required.');
+    if (isSubmitting) return;
+
+    let hasClientError = false;
+    const trimmedEmail = email.trim();
+
+    if (!trimmedEmail) {
+      setEmailError('Email address is required.');
+      hasClientError = true;
+    } else if (!validateEmail(trimmedEmail)) {
+      setEmailError('Enter a valid email address.');
+      hasClientError = true;
+    } else {
+      setEmailError(null);
+    }
+
+    if (!password) {
+      setPasswordError('Access password is required.');
+      hasClientError = true;
+    } else if (password.length < 8) {
+      setPasswordError('Password must be at least 8 characters in length.');
+      hasClientError = true;
+    } else {
+      setPasswordError(null);
+    }
+
+    if (hasClientError) {
+      setFormError('Please resolve the errors highlighted below.');
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters in length.');
-      return;
-    }
-
-    setError(null);
+    setFormError(null);
     setIsSubmitting(true);
 
     try {
-      await login(email.trim(), password);
+      await login(trimmedEmail, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid credentials. Please verify and retry.');
+      setFormError(err instanceof Error ? err.message : 'Invalid credentials. Please verify and retry.');
     } finally {
       setIsSubmitting(false);
     }
@@ -75,27 +113,25 @@ export const LoginPage: React.FC = () => {
               </div>
               <div>
                 <div className="font-semibold tracking-wide text-text-primary text-base">FinPulse</div>
-                <div className="text-[10px] font-mono text-amber uppercase tracking-widest">
-                  Obsidian Terminal v1.0
-                </div>
+                <div className="text-[10px] font-mono text-amber uppercase tracking-widest">Portfolio tracking</div>
               </div>
             </div>
 
             <h2 className="text-3xl font-bold text-text-primary leading-snug mb-4">
-              Institutional<br />
-              <span className="text-amber">Portfolio Intelligence</span>
+              Track your<br />
+              <span className="text-amber">investments clearly</span>
             </h2>
             <p className="text-sm text-text-secondary leading-relaxed max-w-xs">
-              Real-time price streaming over WebSocket · PostgreSQL order ledger · Redis Pub/Sub market feed
+              Follow your holdings, review performance, and place paper trades with confidence.
             </p>
           </div>
 
           {/* Feature list */}
           <div className="relative z-10 space-y-3">
             {[
-              { label: 'Live Price Streaming', desc: 'WebSocket broadcast from Redis Pub/Sub' },
-              { label: 'Atomic Order Execution', desc: 'Transactional paper trades in PostgreSQL' },
-              { label: 'Portfolio P&L Analytics', desc: 'Unrealized gains with cost-basis reconciliation' },
+              { label: 'Live prices', desc: 'See market movements as they happen' },
+              { label: 'Simple paper trading', desc: 'Practice buying and selling without real money' },
+              { label: 'Clear performance', desc: 'Understand value, cost, and unrealized return' },
             ].map((feat) => (
               <div key={feat.label} className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber mt-1.5 flex-shrink-0" />
@@ -110,7 +146,7 @@ export const LoginPage: React.FC = () => {
           {/* Bottom status indicator */}
           <div className="relative z-10 flex items-center gap-2 text-[11px] font-mono text-text-muted">
             <Activity className="w-3.5 h-3.5 text-sage" />
-            <span>Paper-trading environment — no real capital at risk</span>
+            <span>Paper trading only — no real money is involved</span>
           </div>
         </div>
 
@@ -123,10 +159,10 @@ export const LoginPage: React.FC = () => {
                 <Terminal className="w-6 h-6" />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-                FinPulse Terminal
+                FinPulse
               </h1>
               <p className="text-xs text-text-muted mt-1 uppercase font-mono tracking-widest">
-                Institutional Market &amp; Portfolio Access
+                Portfolio tracking and paper trading
               </p>
             </div>
 
@@ -134,42 +170,70 @@ export const LoginPage: React.FC = () => {
             <div className="p-6 md:p-8 rounded-lg bg-surface border border-border shadow-2xl animate-slide-up">
               <div className="mb-6 pb-4 border-b border-border-subtle">
                 <h2 className="text-sm font-semibold uppercase tracking-wider font-mono text-text-primary">
-                  Terminal Authentication
+                  Sign in
                 </h2>
                 <p className="text-xs text-text-muted mt-0.5">
-                  Enter your authorized credentials to open a workspace session.
+                  Welcome back. Sign in to view your portfolio.
                 </p>
               </div>
 
-              {error && (
+              {formError && (
                 <div
-                  className="p-3 mb-5 rounded text-xs bg-coral-dim border border-coral/30 text-coral-text flex items-start gap-2"
+                  className="p-3 mb-5 rounded text-xs bg-coral-dim border border-coral/30 text-coral-text flex items-start gap-2 animate-fade-in"
                   role="alert"
                 >
                   <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>{error}</span>
+                  <span className="leading-relaxed">{formError}</span>
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4" noValidate>
                 <div>
-                  <label
-                    htmlFor="login-email"
-                    className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-1.5"
-                  >
-                    Workstation Email
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label
+                      htmlFor="login-email"
+                      className="block text-xs font-mono uppercase tracking-wider text-text-muted"
+                    >
+                      Email address
+                    </label>
+                    {import.meta.env.DEV && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                        setEmail('investor@finpulse.local');
+                          setPassword('password123');
+                          setEmailError(null);
+                          setPasswordError(null);
+                          setFormError(null);
+                        }}
+                        className="text-[10px] font-mono text-amber hover:underline focus:outline-none"
+                      >
+                        Use demo account
+                      </button>
+                    )}
+                  </div>
                   <input
                     id="login-email"
                     type="email"
                     required
                     autoComplete="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={handleEmailChange}
                     placeholder="investor@finpulse.local"
-                    className="w-full px-3 py-2.5 text-sm bg-surface-elevated border border-border rounded text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/30 transition-colors font-mono"
+                    aria-invalid={!!emailError}
+                    aria-describedby={emailError ? 'login-email-error' : undefined}
+                    className={`w-full px-3 py-2.5 text-sm bg-surface-elevated border rounded text-text-primary placeholder:text-text-muted/50 focus:outline-none transition-colors font-mono ${
+                      emailError
+                        ? 'border-coral/60 focus:border-coral focus:ring-1 focus:ring-coral/30'
+                        : 'border-border focus:border-amber focus:ring-1 focus:ring-amber/30'
+                    }`}
                     disabled={isSubmitting}
                   />
+                  {emailError && (
+                    <p id="login-email-error" className="text-[11px] font-mono text-coral-text mt-1">
+                      {emailError}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -177,7 +241,7 @@ export const LoginPage: React.FC = () => {
                     htmlFor="login-password"
                     className="block text-xs font-mono uppercase tracking-wider text-text-muted mb-1.5"
                   >
-                    Access Password
+                      Password
                   </label>
                   <div className="relative">
                     <input
@@ -186,9 +250,15 @@ export const LoginPage: React.FC = () => {
                       required
                       autoComplete="current-password"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={handlePasswordChange}
                       placeholder="Min 8 characters"
-                      className="w-full px-3 py-2.5 pr-10 text-sm bg-surface-elevated border border-border rounded text-text-primary placeholder:text-text-muted/50 focus:outline-none focus:border-amber focus:ring-1 focus:ring-amber/30 transition-colors font-mono"
+                      aria-invalid={!!passwordError}
+                      aria-describedby={passwordError ? 'login-password-error' : undefined}
+                      className={`w-full px-3 py-2.5 pr-10 text-sm bg-surface-elevated border rounded text-text-primary placeholder:text-text-muted/50 focus:outline-none transition-colors font-mono ${
+                        passwordError
+                          ? 'border-coral/60 focus:border-coral focus:ring-1 focus:ring-coral/30'
+                          : 'border-border focus:border-amber focus:ring-1 focus:ring-amber/30'
+                      }`}
                       disabled={isSubmitting}
                     />
                     <button
@@ -200,6 +270,11 @@ export const LoginPage: React.FC = () => {
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  {passwordError && (
+                    <p id="login-password-error" className="text-[11px] font-mono text-coral-text mt-1">
+                      {passwordError}
+                    </p>
+                  )}
                 </div>
 
                 <button
@@ -211,30 +286,29 @@ export const LoginPage: React.FC = () => {
                   {isSubmitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>AUTHENTICATING...</span>
+                    <span>SIGNING IN...</span>
                     </>
                   ) : (
-                    <span>INITIALIZE SESSION</span>
+                    <span>SIGN IN</span>
                   )}
                 </button>
               </form>
 
               {/* Registration Link */}
               <div className="mt-6 pt-4 border-t border-border-subtle text-center text-xs text-text-muted">
-                New operator?{' '}
+                New to FinPulse?{' '}
                 <Link
                   to="/register"
                   className="font-mono text-amber hover:text-amber-hover underline transition-colors"
                 >
-                  Register terminal ID
+                  Create an account
                 </Link>
               </div>
             </div>
 
             {/* Security Disclosure */}
             <p className="text-[11px] font-mono text-text-muted/70 text-center mt-6 max-w-sm mx-auto leading-relaxed">
-              Security notice: Tokens are authenticated against the FinPulse Express backend and stored
-              in browser storage for session persistence.
+              Paper-trading account. Never use a password you rely on elsewhere.
             </p>
           </div>
         </div>

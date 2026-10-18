@@ -16,10 +16,14 @@ export async function getAllAssets(): Promise<{
   fromCache: boolean;
 }> {
   const key = "assets:all";
-  const cachedAsset = await redis.get(key);
-  if (cachedAsset) {
-    console.log("CACHE HIT:", key);
-    return { assets: JSON.parse(cachedAsset), fromCache: true };
+  try {
+    const cachedAsset = await redis.get(key);
+    if (cachedAsset) {
+      console.log("CACHE HIT:", key);
+      return { assets: JSON.parse(cachedAsset), fromCache: true };
+    }
+  } catch {
+    // Redis unavailable, fallback to DB
   }
 
   console.log("CACHE MISS:", key);
@@ -28,7 +32,11 @@ export async function getAllAssets(): Promise<{
   const assets = assetResult.rows;
 
   if (assets.length > 0) {
-    await redis.set(key, JSON.stringify(assets), "EX", CACHE_TTL);
+    try {
+      await redis.set(key, JSON.stringify(assets), "EX", CACHE_TTL);
+    } catch {
+      // Ignore cache write error
+    }
   }
 
   return { assets, fromCache: false };
@@ -38,10 +46,14 @@ export async function getAssetBySymbol(
   symbol: string,
 ): Promise<{ asset: AssetRow | null; fromCache: boolean }> {
   const key = `asset:${symbol}`;
-  const cachedAsset = await redis.get(key);
-  if (cachedAsset) {
-    console.log("CACHE HIT:", key);
-    return { asset: JSON.parse(cachedAsset), fromCache: true };
+  try {
+    const cachedAsset = await redis.get(key);
+    if (cachedAsset) {
+      console.log("CACHE HIT:", key);
+      return { asset: JSON.parse(cachedAsset), fromCache: true };
+    }
+  } catch {
+    // Redis unavailable, fallback to DB
   }
 
   console.log("CACHE MISS:", key);
@@ -53,7 +65,11 @@ export async function getAssetBySymbol(
   }
 
   const asset = assetResult.rows[0];
-  await redis.set(key, JSON.stringify(asset), "EX", CACHE_TTL);
+  try {
+    await redis.set(key, JSON.stringify(asset), "EX", CACHE_TTL);
+  } catch {
+    // Ignore cache write error
+  }
 
   return { asset, fromCache: false };
 }

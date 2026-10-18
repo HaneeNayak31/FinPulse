@@ -44,12 +44,10 @@ export async function executeOrder(params: CreateOrderParams): Promise<OrderRow>
     );
 
     if (checkifCorrectUser.rows.length === 0) {
-      await client.query("ROLLBACK");
       throw new OrderServiceError(404, "PORTFOLIO_NOT_FOUND", "Portfolio not found");
     }
 
     if (checkifCorrectUser.rows[0].user_id !== userId) {
-      await client.query("ROLLBACK");
       throw new OrderServiceError(403, "FORBIDDEN", "Not authorized");
     }
 
@@ -59,7 +57,6 @@ export async function executeOrder(params: CreateOrderParams): Promise<OrderRow>
     }>(`SELECT current_price FROM assets WHERE id = $1`, [assetId]);
 
     if (checkifCorrectPrice.rows.length === 0) {
-      await client.query("ROLLBACK");
       throw new OrderServiceError(404, "ASSET_NOT_FOUND", "Asset not found");
     }
 
@@ -76,7 +73,6 @@ export async function executeOrder(params: CreateOrderParams): Promise<OrderRow>
       );
 
       if (orderResult.rows.length === 0) {
-        await client.query("ROLLBACK");
         throw new Error("Order was not created");
       }
 
@@ -101,7 +97,6 @@ export async function executeOrder(params: CreateOrderParams): Promise<OrderRow>
       );
 
       if (holdingResult.rows.length === 0) {
-        await client.query("ROLLBACK");
         throw new OrderServiceError(
           400,
           "HOLDING_NOT_FOUND",
@@ -112,7 +107,6 @@ export async function executeOrder(params: CreateOrderParams): Promise<OrderRow>
       const availableQuantity = Number(holdingResult.rows[0].quantity);
 
       if (quantity > availableQuantity) {
-        await client.query("ROLLBACK");
         throw new OrderServiceError(
           400,
           "INSUFFICIENT_HOLDINGS",
@@ -128,7 +122,6 @@ export async function executeOrder(params: CreateOrderParams): Promise<OrderRow>
       );
 
       if (orderResult.rows.length === 0) {
-        await client.query("ROLLBACK");
         throw new Error("Sell order was not created");
       }
 

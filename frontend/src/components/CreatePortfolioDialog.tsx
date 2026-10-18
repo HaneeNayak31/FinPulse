@@ -57,7 +57,7 @@ export const CreatePortfolioDialog: React.FC<CreatePortfolioDialogProps> = ({
         </div>
 
         <p className="text-xs text-text-secondary mb-5 leading-relaxed">
-          Create an isolated holdings portfolio to monitor target asset allocations and simulate execution orders.
+          Create a portfolio to organize holdings and track performance.
         </p>
 
         {error && (

@@ -33,7 +33,9 @@ subscriber.on("message", (channel, message) => {
   }
 });
 
-subscriber.subscribe("market:prices");
+subscriber.subscribe("market:prices").catch(() => {
+  // If Redis is offline at boot, ioredis will resubscribe automatically on connect
+});
 
 /**
  * Dynamically update or refresh held symbols for all active SSE connections

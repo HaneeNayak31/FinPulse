@@ -50,7 +50,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({ holdings, is
       <PortfolioMetricCard
         label="Portfolio Market Value"
         value={formatCurrency(totalMarketValue)}
-        subtitle={holdings.length === 0 ? 'No active equity holdings' : `${holdings.length} ${holdings.length === 1 ? 'position' : 'positions'} across active book`}
+        subtitle={holdings.length === 0 ? 'No positions yet' : `${holdings.length} ${holdings.length === 1 ? 'position' : 'positions'}`}
         icon={Wallet}
       />
 

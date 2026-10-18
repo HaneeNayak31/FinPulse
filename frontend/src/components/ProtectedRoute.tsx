@@ -38,7 +38,7 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ childr
               FinPulse
             </div>
             <div className="text-[10px] font-mono tracking-[0.25em] uppercase text-amber">
-              Obsidian Terminal
+              FinPulse
             </div>
           </div>
 

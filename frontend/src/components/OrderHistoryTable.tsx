@@ -58,10 +58,10 @@ export const OrderHistoryTable: React.FC<OrderHistoryTableProps> = ({
           <History className="w-4 h-4 text-amber" />
           <div>
             <h2 className="text-sm font-semibold text-text-primary tracking-wide">
-              Audited Order Ledger
+              Order history
             </h2>
             <p className="text-[11px] text-text-muted mt-0.5">
-              Persistent transaction audit trail from database
+              Your recent buys and sells
             </p>
           </div>
         </div>
@@ -102,7 +102,7 @@ export const OrderHistoryTable: React.FC<OrderHistoryTableProps> = ({
             No Transactions Recorded
           </p>
           <p className="text-[11px] text-text-muted max-w-xs mx-auto mb-4">
-            Orders submitted against this portfolio will appear here with fill price and audit timestamps.
+            Trades for this portfolio will appear here with price and time.
           </p>
           {onOpenOrderDialog && (
             <button

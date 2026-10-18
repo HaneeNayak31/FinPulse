@@ -36,10 +36,10 @@ export const MarketWatchlist: React.FC<MarketWatchlistProps> = ({
             <TrendingUp className="w-4 h-4 text-amber" />
             <div>
               <h2 className="text-sm font-semibold text-text-primary tracking-wide">
-                Market Surveillance Watchlist
+                Market watchlist
               </h2>
               <p className="text-[11px] text-text-muted mt-0.5">
-                Benchmark instruments streaming live via simulated WebSocket feed
+                Live prices for the assets you can trade
               </p>
             </div>
           </div>
@@ -117,9 +117,9 @@ export const MarketWatchlist: React.FC<MarketWatchlistProps> = ({
       <div className="pt-3 mt-4 border-t border-border-subtle flex items-center justify-between text-[11px] font-mono text-text-muted">
         <div className="flex items-center gap-1.5">
           <Info className="w-3 h-3 text-amber" />
-          <span>Simulated Paper-Trading Quotes</span>
+          <span>Paper-trading prices</span>
         </div>
-        <span>Redis WS Feed</span>
+        <span>Live updates</span>
       </div>
     </div>
   );

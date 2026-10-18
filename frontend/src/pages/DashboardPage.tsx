@@ -65,22 +65,21 @@ export const DashboardPage: React.FC = () => {
   return (
     <>
       <AppHeader
-        title="Terminal Overview"
-        subtitle="Real-time equity valuation, position distribution, and live asset surveillance"
+        title="Overview"
+        subtitle="Your portfolio at a glance"
         onOpenMobileMenu={onOpenMobileMenu}
       >
         <PortfolioSelector />
       </AppHeader>
 
       <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto">
-        {/* If user has no portfolio books established yet */}
         {!isLoadingPortfolios && portfolios.length === 0 ? (
           <EmptyState
-            title="No Investment Book Initialized"
-            description="To begin monitoring equity instruments, tracking real-time unrealized P&L, and executing simulated paper orders, create your first portfolio book."
+            title="Create your first portfolio"
+            description="Track holdings, review performance, and place paper trades in one place."
             icon={Briefcase}
             action={{
-              label: 'Initialize First Portfolio Book',
+              label: 'Create portfolio',
               onClick: () => setCreatePortfolioOpen(true),
             }}
           />
@@ -94,11 +93,11 @@ export const DashboardPage: React.FC = () => {
                     {activePortfolio?.name || 'Investment Portfolio'}
                   </h1>
                   <span className="text-[10px] font-mono text-text-muted border border-border bg-surface px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    Paper Trading · USD
+                    Paper trading · USD
                   </span>
                 </div>
                 <p className="text-xs text-text-muted mt-1 font-sans">
-                  Real-time portfolio evaluation, asset weight distribution, and market order execution.
+                  Track value, allocation, and recent activity.
                 </p>
               </div>
 
@@ -107,7 +106,7 @@ export const DashboardPage: React.FC = () => {
                   to="/portfolio"
                   className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-mono font-medium text-text-secondary hover:text-text-primary bg-surface border border-border hover:border-border-strong hover:bg-surface-elevated rounded transition-colors shadow-subtle"
                 >
-                  <span>Holdings Ledger</span>
+                  <span>View portfolio</span>
                   <ArrowRight className="w-3 h-3 text-text-muted" />
                 </Link>
                 <button
@@ -115,7 +114,7 @@ export const DashboardPage: React.FC = () => {
                   className="inline-flex items-center gap-1.5 h-8 px-3.5 text-xs font-mono font-bold text-black bg-amber hover:bg-amber-hover rounded transition-colors shadow-subtle"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>Execute Order</span>
+                  <span>Place trade</span>
                 </button>
               </div>
             </div>
@@ -125,7 +124,7 @@ export const DashboardPage: React.FC = () => {
 
             {/* Balanced 2-Column Responsive Grid: Watchlist (Left) + Portfolio Allocation (Right) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-              {/* Market Surveillance Watchlist (7 cols on lg) */}
+              {/* Market watchlist */}
               <div className="lg:col-span-7 flex">
                 <MarketWatchlist
                   onSelectAssetForOrder={handleTradeAsset}
@@ -144,17 +143,17 @@ export const DashboardPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Recent Order Ledger Table */}
+            {/* Recent activity */}
             <div>
               <div className="flex items-center justify-between mb-3">
                 <span className="text-xs font-mono uppercase tracking-widest text-text-muted">
-                  Recent Ledger Activity
+                  Recent activity
                 </span>
                 <Link
                   to="/orders"
                   className="text-xs font-mono text-amber hover:underline flex items-center gap-1"
                 >
-                  <span>Full Order Audit Trail</span>
+                  <span>View all orders</span>
                   <ArrowRight className="w-3 h-3" />
                 </Link>
               </div>

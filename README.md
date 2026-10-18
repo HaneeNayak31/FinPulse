@@ -1,151 +1,233 @@
-# FinPulse — Real-Time Fintech & Portfolio Management Engine
+# FinPulse
 
-FinPulse is a full-stack, simulated financial transaction and portfolio management platform built with Node.js, Express, TypeScript, PostgreSQL, Redis, and WebSockets.
+FinPulse is a paper-trading portfolio app for tracking stock holdings, monitoring live quote updates, and practicing buy and sell decisions without real money.
 
----
+It includes:
 
-## 🏛 System Architecture
+- Portfolio creation and selection
+- Paper buy and sell orders
+- Average-cost basis and unrealized P&L calculations
+- Portfolio allocation by position
+- Market watchlist for AAPL, MSFT, GOOGL, and TSLA
+- Live quote updates through WebSockets and portfolio-scoped SSE
+- Short-term price trend charts based on observed quote updates
+- Redis caching with a PostgreSQL fallback
+- JWT authentication, password hashing, CORS controls, and rate limiting
+- Responsive light and dark themes
 
-The backend follows a layered, modular architecture:
+> FinPulse is not a brokerage service. Prices and orders are simulated, and no real funds or securities are involved.
 
+## Stack
+
+| Area | Technology |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, Tailwind CSS, Recharts |
+| API | Node.js, Express, TypeScript |
+| Database | PostgreSQL 16 |
+| Cache and messaging | Redis 7 |
+| Realtime | WebSocket and Server-Sent Events |
+| Authentication | JWT and bcrypt |
+| Testing | Node test runner, tsx, PostgreSQL, Redis |
+
+## Project layout
+
+```text
+FinPulse/
+├── src/                 Backend API and realtime server
+├── frontend/src/        Pages, components, charts, state, and API client
+├── tests/               Backend integration and calculation tests
+├── finpulse_schema.sql  PostgreSQL schema
+├── db/seed.sql          Initial market assets for a fresh database
+├── docker-compose.yml   PostgreSQL, Redis, and backend services
+└── Dockerfile            Production backend image
 ```
-src/
-├── config/             # Type-safe environment variable validation (env.ts)
-├── controllers/        # Thin HTTP request/response handlers
-│   ├── assetController.ts
-│   ├── authController.ts
-│   ├── orderController.ts
-│   └── portfolioController.ts
-├── services/           # Core business logic and database access
-│   ├── assetService.ts
-│   ├── authService.ts
-│   ├── orderService.ts
-│   ├── portfolioService.ts
-│   └── priceSimulator.ts
-├── routes/             # Express router declarations and path mounting
-│   ├── assetRoutes.ts
-│   ├── authRoutes.ts
-│   ├── orderRoutes.ts
-│   ├── portfolioEvents.ts
-│   └── portfolioRoutes.ts
-├── middleware/         # Authentication and request middleware
-│   ├── auth.ts
-│   ├── cors.ts         # Origin-validated CORS with preflight handling
-│   └── rateLimiter.ts  # Sliding-window IP rate limiter for auth routes
-├── app.ts              # Express application setup and router composition
-├── server.ts           # HTTP server, WebSocket lifecycle, and graceful shutdown
-├── db.ts               # PostgreSQL connection pool (pg)
-└── redis.ts            # Redis client and Pub/Sub subscriber (ioredis)
+
+## Requirements
+
+- Node.js 20 or newer
+- Docker Desktop with Docker Compose
+
+The backend test suite also requires PostgreSQL and Redis to be reachable locally.
+
+## Configuration
+
+Copy the example environment file and set the database password and JWT secret:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
----
+Example local configuration:
 
-## 🚀 Core Features & Implementation Highlights
-
-### 1. Financial Order Execution & Concurrency Safety
-- **ACID Transaction Boundaries**: Every order execution is wrapped in an explicit `BEGIN ... COMMIT / ROLLBACK` block.
-- **Pessimistic Row Locking (`FOR UPDATE`)**: Prevents race conditions and negative holdings during concurrent SELL orders. If concurrent requests exceed available quantity, subsequent requests are safely rejected with `INSUFFICIENT_HOLDINGS`.
-- **Average Cost (AVCO) Accounting**:
-  - **BUY orders** blend entry prices into the weighted average cost basis:
-    $$\text{AvgPrice}_{\text{new}} = \frac{Q_{\text{old}} \cdot \text{AvgPrice}_{\text{old}} + Q_{\text{buy}} \cdot P_{\text{buy}}}{Q_{\text{old}} + Q_{\text{buy}}}$$
-  - **Partial SELL orders** decrement shares while holding the cost basis per share strictly invariant.
-  - **Precision**: Fractional shares supported up to 4 decimal places (`numeric(14,4)`).
-
-### 2. Real-Time Market Simulation Pipeline & Scoped SSE
-- **Price Simulator**: Random-walk price fluctuations with DB persistence.
-- **Redis Pub/Sub**: Price ticks publish to the `market:prices` Redis channel.
-- **WebSocket Streaming**: Symbol-level subscription delivery (`SUBSCRIBE` / `UNSUBSCRIBE`).
-- **Scoped Server-Sent Events (SSE)**: Streams at `/portfolios/:id/events` deliver price ticks strictly for assets currently held in that portfolio, filtering out all unheld symbols without per-tick DB queries.
-- **Cache Eviction**: Automated eviction of Redis keys `asset:<SYMBOL>` and `assets:all` upon price changes.
-
-### 3. Caching Strategy
-- Redis key-value caching with 30-second TTL on `/assets` and `/assets/:symbol`.
-- Automatic cache invalidation upon simulated price ticks to ensure zero stale reads.
-
-### 4. Security & Traffic Control
-- **CORS Management**: Strict origin filtering configured via `CORS_ORIGIN` (defaults to local Vite origins). Credentials allowed only for whitelisted origins; disallowed origins receive explicit 403 preflight rejection.
-- **Rate Limiting**: Sliding-window rate limiter protecting `/auth/register` and `/auth/login` against brute-force attacks, returning HTTP `429 Too Many Requests` and standard `Retry-After` header. Supports proxy IP extraction via `trust proxy`.
-- **Authentication**: JWT token verification (`24h` expiration) with bcrypt password hashing (10 salt rounds).
-- **Data Isolation**: Strict user-ownership enforcement on all portfolio queries, orders, and event streams.
-- **SQL Injection Prevention**: 100% parameterized SQL queries using PostgreSQL placeholders (`$1, $2, ...`).
-- **Authentication**: JWT token verification (`24h` expiration) with bcrypt password hashing (10 salt rounds).
-- **Data Isolation**: Strict user-ownership enforcement on all portfolio queries and order executions.
-- **SQL Injection Prevention**: 100% parameterized SQL queries using PostgreSQL placeholders (`$1, $2, ...`).
-
----
-
-## 🛠 Local Setup & Running
-
-### Prerequisites
-- Node.js >= 20.x
-- Docker & Docker Compose
-
-### 1. Environment Configuration
-Copy `.env.example` to `.env` and configure your credentials:
-```bash
+```env
 PORT=4000
 DATABASE_URL=postgresql://postgres:YOUR_DB_PASSWORD@localhost:5432/FinPulse
 REDIS_URL=redis://localhost:6379
-JWT_SECRET=your_jwt_secret_key_here
+JWT_SECRET=replace_with_a_long_random_secret
 POSTGRES_PASSWORD=YOUR_DB_PASSWORD
 ```
 
-### 2. Running with Docker Compose
-```bash
-docker compose up -d
-```
-Starts PostgreSQL, Redis, and the compiled production Node backend.
+For Docker Compose, the backend uses the internal hosts `db` and `redis`; Compose supplies those connection strings automatically.
 
-### 3. Running Locally for Development
-```bash
-# Install dependencies
-npm install
+## Run with Docker Compose
 
-# Start backend in development mode with live watch
-npm run dev
+From the repository root:
 
-# Start frontend in development mode
-cd frontend
-npm install
-npm run dev
+```powershell
+docker compose up --build
 ```
 
----
+Services:
 
-## 🧪 Automated Testing
+- Frontend development server: `http://localhost:5173`
+- Backend API: `http://localhost:4000`
+- PostgreSQL from the host: `localhost:5433`
+- Redis from the host: `localhost:6379`
 
-The test suite runs against an isolated test database (`finpulse_test`) to ensure zero mutation or corruption of development data.
+On first database initialization, PostgreSQL runs `finpulse_schema.sql` and then inserts baseline assets from `db/seed.sql`.
 
-Run the test suite:
-```bash
+If the database volume was created before the initialization files were added, PostgreSQL will not rerun them automatically. Recreate only the project database volume when a clean local database is intended:
+
+```powershell
+docker compose down -v
+docker compose up --build
+```
+
+## Run locally
+
+Start PostgreSQL and Redis first, then install and run the backend:
+
+```powershell
+npm install
+npm run build
+npm run dev
+```
+
+In a second terminal, start the frontend:
+
+```powershell
+Set-Location frontend
+npm install
+npm run dev
+```
+
+The Vite development server proxies `/auth`, `/assets`, `/portfolios`, and WebSocket traffic to the backend.
+
+## Verification
+
+Backend build:
+
+```powershell
+npm run build
+```
+
+Backend integration tests:
+
+```powershell
 npm test
 ```
 
-### Test Coverage Summary:
-- **`tests/auth.test.ts`**: Registration validation, duplicate checks, login, JWT token issuance, and protected routes.
-- **`tests/orders.test.ts`**: Input validation, portfolio ownership checks, BUY order holding creation, SELL order deductions, and pagination.
-- **`tests/holdings_and_pnl.test.ts`**: Mathematical verification of weighted average cost basis, valuation, and unrealized P&L calculations.
-- **`tests/concurrency_and_rollback.test.ts`**: Transaction rollbacks and concurrent SELL race conditions with row-level locking.
-- **`tests/redis_cache.test.ts`**: Redis cache miss, hit, TTL validation, and tick invalidation.
-- **`tests/realtime_pipeline.test.ts`**: End-to-end WebSocket subscriptions, SSE streaming, and reconnection missed-event recovery.
+Frontend production build:
 
----
+```powershell
+Set-Location frontend
+npm run build
+```
 
-## 📋 API Contract Reference
+Frontend linting:
 
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| `GET` | `/` | No | Health check |
-| `POST` | `/auth/register` | No | Register new user |
-| `POST` | `/auth/login` | No | Login and receive JWT |
-| `GET` | `/auth/me` | Bearer | Get current authenticated user |
-| `GET` | `/assets` | No | List all assets (cached in Redis) |
-| `GET` | `/assets/:symbol` | No | Get single asset details (cached in Redis) |
-| `POST` | `/assets/:symbol/simulate`| No | Simulate market price tick |
-| `GET` | `/portfolios` | Bearer | List user portfolios |
-| `POST` | `/portfolios` | Bearer | Create new portfolio |
-| `GET` | `/portfolios/:id` | Bearer | Get portfolio by ID |
-| `GET` | `/portfolios/:id/holdings`| Bearer | Get portfolio holdings with current market prices |
-| `POST` | `/portfolios/:id/orders` | Bearer | Execute BUY or SELL order |
-| `GET` | `/portfolios/:id/orders` | Bearer | Get paginated order history (`?page=1&limit=20`) |
-| `GET` | `/portfolios/:id/events` | Bearer | SSE stream for real-time market updates |
+```powershell
+npm run lint
+```
+
+Integration tests use the `finpulse_test` database derived from `DATABASE_URL`. They initialize missing tables, seed standard assets, and clean users, portfolios, holdings, and orders between suites.
+
+## User flows
+
+### Sign up and sign in
+
+1. Open `/register` and create an account with a username, email, and password of at least eight characters.
+2. Sign in at `/login`.
+3. FinPulse stores the session token in the browser and opens the overview.
+
+### Create a portfolio
+
+Create a portfolio from the overview or portfolio page. A user can have multiple portfolios and switch between them from the header.
+
+### Place a paper trade
+
+Choose an asset from Markets, the overview watchlist, or Portfolio, then choose Buy or Sell. A buy creates or updates a holding using weighted average cost. A sell is allowed only for shares currently held.
+
+### Understand portfolio performance
+
+- Market value is current price multiplied by quantity.
+- Cost basis is quantity multiplied by average purchase price.
+- Unrealized P&L is market value minus cost basis.
+- The allocation chart shows each position's share of portfolio market value.
+- Market cards show a compact trend line once quote updates have been observed in the current session.
+
+## API reference
+
+Authenticated endpoints use `Authorization: Bearer <token>`.
+
+| Method | Endpoint | Auth | Purpose |
+| --- | --- | --- | --- |
+| GET | `/` | No | API health response |
+| POST | `/auth/register` | No | Create a user |
+| POST | `/auth/login` | No | Sign in and receive a JWT |
+| GET | `/auth/me` | Yes | Return the current user |
+| GET | `/assets` | No | List market assets |
+| GET | `/assets/:symbol` | No | Read one asset quote |
+| POST | `/assets/:symbol/simulate` | No | Generate a paper price update |
+| GET | `/portfolios` | Yes | List the user's portfolios |
+| POST | `/portfolios` | Yes | Create a portfolio |
+| GET | `/portfolios/:id` | Yes | Read one owned portfolio |
+| GET | `/portfolios/:id/holdings` | Yes | Read current holdings and valuation |
+| POST | `/portfolios/:id/orders` | Yes | Place a BUY or SELL order |
+| GET | `/portfolios/:id/orders` | Yes | Read paginated order history |
+| GET | `/portfolios/:id/events` | Yes | Stream scoped portfolio price events |
+
+WebSocket clients connect to the server and send messages such as:
+
+```json
+{ "type": "SUBSCRIBE", "symbol": "AAPL" }
+```
+
+Price events are delivered only to clients subscribed to the matching symbol. SSE portfolio streams are additionally scoped to assets currently held by that portfolio.
+
+## Data and transaction safety
+
+Order execution runs inside a PostgreSQL transaction. Portfolio ownership is checked before execution, sell holdings are locked with `FOR UPDATE`, and the transaction rolls back if validation or persistence fails. This prevents concurrent sell requests from overselling a holding.
+
+Redis improves quote reads and carries market events, but it is optional for database-backed portfolio functionality. The application falls back to PostgreSQL when Redis is unavailable.
+
+## Troubleshooting
+
+### Backend cannot connect to PostgreSQL
+
+Confirm that the database is running and that the connection string points to the correct port. Compose exposes PostgreSQL on `5433` to the host, while the local `.env` example uses `5432` for a native PostgreSQL installation.
+
+```powershell
+docker compose ps
+docker compose logs db
+```
+
+### The database has no assets or tables
+
+Initialization scripts run only when the PostgreSQL data volume is empty. Recreate the local project volume as described above, then start Compose again.
+
+### Redis is unavailable
+
+The API can still serve database-backed features and logs Redis as optional. Realtime updates, cache hits, and quote event delivery require Redis to be running.
+
+### Frontend cannot reach the API
+
+Run the backend on port 4000, or set the frontend API variables in `frontend/.env` to the correct API and WebSocket URLs. The default Vite proxy expects `http://localhost:4000`.
+
+## Design principles
+
+- Keep product language focused on decisions and outcomes rather than implementation details.
+- Show charts only where a visual trend improves understanding: market cards show price movement and the portfolio shows allocation.
+- Keep simulated data clearly labeled so it cannot be mistaken for live brokerage data.
+- Preserve precise numeric handling for fractional shares and average-cost calculations.
+- Keep user data isolated by authenticated ownership checks on every portfolio operation.

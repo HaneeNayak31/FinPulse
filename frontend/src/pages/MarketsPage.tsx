@@ -7,8 +7,9 @@ import { AppHeader } from '../components/AppHeader';
 import { PriceChangeIndicator } from '../components/PriceChangeIndicator';
 import { OrderDialog } from '../components/OrderDialog';
 import { PortfolioSelector } from '../components/PortfolioSelector';
+import { StockPriceChart } from '../components/StockPriceChart';
 import type { OrderType, Asset } from '../types';
-import { TrendingUp, ArrowUpRight, ArrowDownRight, Zap, RefreshCw, Activity } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Zap, RefreshCw, Activity } from 'lucide-react';
 
 import { queryKeys } from '../lib/queryKeys';
 
@@ -41,7 +42,7 @@ export const MarketsPage: React.FC = () => {
       setIsSimulating(true);
       await api.assets.simulateTick(symbol);
     } catch (err) {
-      console.error(`Failed to simulate tick for ${symbol}:`, err);
+      console.error(`Failed to update quote for ${symbol}:`, err);
     } finally {
       setIsSimulating(false);
     }
@@ -50,25 +51,24 @@ export const MarketsPage: React.FC = () => {
   return (
     <>
       <AppHeader
-        title="Market Surveillance"
-        subtitle="Real-time quote streaming via WebSocket & simulated execution ticks"
+        title="Markets"
+        subtitle="Live prices and paper trading"
         onOpenMobileMenu={onOpenMobileMenu}
       >
         <PortfolioSelector />
       </AppHeader>
 
       <main className="flex-1 p-4 md:p-8 space-y-6 max-w-7xl w-full mx-auto">
-        {/* Terminal Header Info */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border-subtle">
           <div>
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-amber" />
               <h2 className="text-sm font-semibold text-text-primary tracking-wide">
-                Active Trading Instruments
+                Watchlist
               </h2>
             </div>
             <p className="text-xs text-text-muted mt-0.5">
-              Live quotes broadcast across Redis Pub/Sub through WebSocket pipeline
+              Follow prices and place paper trades from one view
             </p>
           </div>
 
@@ -117,7 +117,7 @@ export const MarketsPage: React.FC = () => {
 
                     <div className="mt-5">
                       <div className="text-[10px] font-mono text-text-muted uppercase">
-                        Spot Execution Quote
+                        Current price
                       </div>
                       <div className="mt-1">
                         <PriceChangeIndicator
@@ -126,6 +126,11 @@ export const MarketsPage: React.FC = () => {
                           className="text-2xl font-bold font-mono tracking-tight"
                         />
                       </div>
+                      <StockPriceChart
+                        symbol={asset.symbol}
+                        price={currentPrice}
+                        liveData={liveData}
+                      />
                       <div className="text-[11px] font-mono text-text-muted mt-1">
                         {liveData?.updatedAt
                           ? `Tick updated ${new Date(liveData.updatedAt).toLocaleTimeString()}`
@@ -139,10 +144,10 @@ export const MarketsPage: React.FC = () => {
                       onClick={() => handleSimulateTick(asset.symbol)}
                       disabled={isSimulating}
                       className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono text-amber hover:text-amber-hover bg-amber-muted border border-amber/30 hover:border-amber rounded transition-colors disabled:opacity-50"
-                      title="Trigger simulated server-side tick"
+                      title="Update this quote"
                     >
                       <Zap className="w-3 h-3" />
-                      <span>Simulate Tick</span>
+                        <span>Update quote</span>
                     </button>
 
                     <div className="flex items-center gap-1.5">
@@ -168,16 +173,6 @@ export const MarketsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Real-time Architecture Notice */}
-        <div className="p-4 rounded bg-surface/50 border border-border text-xs text-text-secondary leading-relaxed">
-          <div className="flex items-center gap-2 font-mono font-medium text-text-primary mb-1">
-            <TrendingUp className="w-4 h-4 text-amber" />
-            <span>Market Simulation Protocol</span>
-          </div>
-          <p className="text-text-muted">
-            The FinPulse backend simulates asset volatility through random percentage adjustments bounded between -1% and +1%. Each simulated tick is atomically written to PostgreSQL, invalidates Redis caching, and publishes an event to the <code className="text-text-primary font-mono bg-surface-elevated px-1 py-0.5 rounded">market:prices</code> Redis Pub/Sub channel which streams to active WebSocket subscribers.
-          </p>
-        </div>
       </main>
 
       <OrderDialog

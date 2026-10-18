@@ -32,10 +32,10 @@ export const MarketTickerStrip = () => {
     }, []);
     // Duplicate for seamless loop
     const doubled = [...assets, ...assets];
-    return (_jsxs("div", { className: "w-full overflow-hidden bg-surface/60 border-b border-border-subtle backdrop-blur-sm", "aria-label": "Live market ticker", children: [_jsx("div", { className: "flex items-center whitespace-nowrap", style: { animation: 'tickerScroll 38s linear infinite' }, children: doubled.map((asset, idx) => {
-                    const isPositive = asset.changePct >= 0;
-                    return (_jsxs("div", { className: "inline-flex items-center gap-2 px-6 py-2 border-r border-border-subtle/60 flex-shrink-0", children: [_jsx("span", { className: "font-mono font-bold text-xs text-text-primary tracking-wide", children: asset.symbol }), _jsxs("span", { className: "font-mono text-xs text-text-primary tabular-nums", children: ["$", asset.price.toFixed(2)] }), _jsxs("span", { className: `font-mono text-[10px] font-semibold ${isPositive ? 'text-sage-text' : 'text-coral-text'}`, children: [isPositive ? '▲' : '▼', " ", Math.abs(asset.changePct).toFixed(2), "%"] })] }, `${asset.symbol}-${idx}`));
-                }) }), _jsx("style", { children: `
+    return (_jsxs("div", { className: "w-full overflow-hidden bg-surface/80 border-b border-border-subtle backdrop-blur-sm flex items-center", "aria-label": "Market prices", children: [_jsxs("div", { className: "flex-shrink-0 px-3 py-1.5 bg-surface-elevated border-r border-border-subtle flex items-center gap-1.5 z-10", children: [_jsx("span", { className: "w-1.5 h-1.5 rounded-full bg-amber animate-pulse" }), _jsx("span", { className: "text-[10px] font-mono uppercase tracking-wider text-text-muted font-medium", children: "MARKET PRICES" })] }), _jsx("div", { className: "overflow-hidden flex-1", children: _jsx("div", { className: "flex items-center whitespace-nowrap", style: { animation: 'tickerScroll 38s linear infinite' }, children: doubled.map((asset, idx) => {
+                        const isPositive = asset.changePct >= 0;
+                        return (_jsxs("div", { className: "inline-flex items-center gap-2 px-6 py-2 border-r border-border-subtle/60 flex-shrink-0", children: [_jsx("span", { className: "font-mono font-bold text-xs text-text-primary tracking-wide", children: asset.symbol }), _jsxs("span", { className: "font-mono text-xs text-text-primary tabular-nums", children: ["$", asset.price.toFixed(2)] }), _jsxs("span", { className: `font-mono text-[10px] font-semibold ${isPositive ? 'text-sage-text' : 'text-coral-text'}`, children: [isPositive ? '▲' : '▼', " ", Math.abs(asset.changePct).toFixed(2), "%"] })] }, `${asset.symbol}-${idx}`));
+                    }) }) }), _jsx("style", { children: `
         @keyframes tickerScroll {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }

@@ -100,7 +100,7 @@ export const ExecuteOrderDialog: React.FC<ExecuteOrderDialogProps> = ({
     },
     onSuccess: (newOrder) => {
       setSuccessMessage(
-        `Executed ${newOrder.type} for ${newOrder.quantity} ${selectedSymbol} @ ${formatCurrency(newOrder.price)} (Total: ${formatCurrency(Number(newOrder.quantity) * Number(newOrder.price))})`
+        `${newOrder.type === 'BUY' ? 'Bought' : 'Sold'} ${newOrder.quantity} ${selectedSymbol} at ${formatCurrency(newOrder.price)} (${formatCurrency(Number(newOrder.quantity) * Number(newOrder.price))} total)`
       );
 
       // Targeted invalidation of active portfolio holdings and orders
@@ -147,7 +147,7 @@ export const ExecuteOrderDialog: React.FC<ExecuteOrderDialogProps> = ({
             <div className="flex items-center gap-2">
               <Receipt className="w-4 h-4 text-amber" />
               <h2 className="text-base font-semibold text-text-primary tracking-wide">
-                Terminal Order Execution
+                Place a trade
               </h2>
             </div>
             <p className="text-xs text-text-muted mt-0.5">
@@ -414,7 +414,7 @@ export const ExecuteOrderDialog: React.FC<ExecuteOrderDialogProps> = ({
                 <span>
                   {orderMutation.isPending
                     ? 'Submitting to Ledger...'
-                    : `Confirm & Execute ${orderType}`}
+                  : `Confirm ${orderType === 'BUY' ? 'buy' : 'sell'}`}
                 </span>
               </button>
             </div>
