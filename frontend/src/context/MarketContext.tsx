@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import type { ConnectionState, PriceUpdatedEvent } from '../types';
 import { useQueryClient } from '@tanstack/react-query';
+import { BASE_URL } from '../lib/api';
 
 interface PriceTelemetry {
   price: number;
@@ -27,9 +28,14 @@ const MarketContext = createContext<MarketContextType | undefined>(undefined);
 function getWebSocketUrl(): string {
   const envUrl = import.meta.env.VITE_WS_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
-    return envUrl.trim();
+    return envUrl.trim().replace(/\/+$/, '');
   }
-  // Default to Vite dev server ws proxy or same host
+  if (!import.meta.env.DEV && BASE_URL) {
+    const apiUrl = new URL(BASE_URL, window.location.origin);
+    apiUrl.protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+    return apiUrl.toString().replace(/\/+$/, '');
+  }
+  // In development, use Vite's WebSocket proxy.
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${window.location.host}/ws`;
 }

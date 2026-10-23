@@ -13,6 +13,7 @@ export function corsMiddleware(
     return next();
   }
 
+  res.vary("Origin");
   const normalizedOrigin = origin.replace(/\/$/, "");
   const isAllowed = env.corsOrigins.includes(normalizedOrigin);
 

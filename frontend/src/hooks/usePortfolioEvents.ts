@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { tokenStorage } from '../lib/api';
+import { tokenStorage, BASE_URL } from '../lib/api';
 import { queryKeys } from '../lib/queryKeys';
 import type { PriceUpdatedEvent } from '../types';
 
@@ -41,7 +41,7 @@ export function usePortfolioEvents({ portfolioId, enabled = true }: UsePortfolio
     abortControllerRef.current = controller;
 
     try {
-      const response = await fetch(`/portfolios/${portfolioId}/events`, {
+      const response = await fetch(`${BASE_URL}/portfolios/${portfolioId}/events`, {
         method: 'GET',
         headers: {
           Accept: 'text/event-stream',

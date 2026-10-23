@@ -19,11 +19,16 @@ function validateEnv(): Config {
       : rawDb;
   const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
   const jwtSecret = process.env.JWT_SECRET;
-  const rawOrigins = process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173";
-  const corsOrigins = rawOrigins
+  const defaultCorsOrigins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://fin-pulse-lime.vercel.app",
+  ];
+  const configuredCorsOrigins = (process.env.CORS_ORIGIN || "")
     .split(",")
     .map((s) => s.trim().replace(/\/$/, ""))
     .filter(Boolean);
+  const corsOrigins = [...new Set([...defaultCorsOrigins, ...configuredCorsOrigins])];
 
   const missing: string[] = [];
   if (!databaseUrl) missing.push("DATABASE_URL");

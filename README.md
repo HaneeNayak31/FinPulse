@@ -113,6 +113,12 @@ npm run dev
 
 The Vite development server proxies `/auth`, `/assets`, `/portfolios`, and WebSocket traffic to the backend.
 
+### Production deployment
+
+The frontend production build reads `VITE_API_BASE_URL` and `VITE_WS_URL` from `frontend/.env.production`; values set in the Vercel project environment override these defaults. The deployed values point to the Render API over HTTPS and its WebSocket endpoint over WSS. The backend allows the deployed Vercel origin and any additional exact origins listed in `CORS_ORIGIN` (comma-separated); it does not allow arbitrary origins.
+
+Render must provide a reachable PostgreSQL `DATABASE_URL` and a strong `JWT_SECRET`. The root endpoint (`/`) is a liveness check. Use `/health/ready` to check whether the backend can query PostgreSQL; it returns 503 when the database is unavailable. Login and registration both require PostgreSQL.
+
 ## Verification
 
 Backend build:
@@ -173,6 +179,7 @@ Authenticated endpoints use `Authorization: Bearer <token>`.
 | Method | Endpoint | Auth | Purpose |
 | --- | --- | --- | --- |
 | GET | `/` | No | API health response |
+| GET | `/health/ready` | No | Readiness check including PostgreSQL connectivity |
 | POST | `/auth/register` | No | Create a user |
 | POST | `/auth/login` | No | Sign in and receive a JWT |
 | GET | `/auth/me` | Yes | Return the current user |

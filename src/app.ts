@@ -4,6 +4,7 @@ import authRoutes from "./routes/authRoutes";
 import assetRoutes from "./routes/assetRoutes";
 import portfolioRoutes from "./routes/portfolioRoutes";
 import { corsMiddleware } from "./middleware/cors";
+import pool from "./db";
 
 const app = express();
 
@@ -19,6 +20,16 @@ app.get("/", (req: Request, res: Response) => {
   res.json({
     message: "FinPulse API is running",
   });
+});
+
+app.get("/health/ready", async (req: Request, res: Response) => {
+  try {
+    await pool.query("SELECT 1");
+    return res.json({ message: "FinPulse API is ready", database: "connected" });
+  } catch (error) {
+    console.error("Readiness check failed:", error);
+    return res.status(503).json({ message: "Database unavailable" });
+  }
 });
 
 // Modular Routes

@@ -22,15 +22,26 @@ export async function loginHandler(req: Request, res: Response) {
       .send("password length should be equal to or greater than 8");
   }
 
-  const user = await findUserByEmail(email);
-  if (!user) {
-    return res.status(401).json({
+  let user: Awaited<ReturnType<typeof findUserByEmail>>;
+  let passwordMatches: boolean;
+  try {
+    user = await findUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    passwordMatches = await comparePassword(password, user.password_hash);
+  } catch (error) {
+    console.error("Login service unavailable:", error);
+    return res.status(503).json({
       success: false,
-      message: "no user found",
+      message: "Authentication service temporarily unavailable",
     });
   }
 
-  const passwordMatches = await comparePassword(password, user.password_hash);
   if (!passwordMatches) {
     return res.status(401).json({
       success: false,

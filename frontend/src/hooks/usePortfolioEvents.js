@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { tokenStorage } from '../lib/api';
+import { tokenStorage, BASE_URL } from '../lib/api';
 import { queryKeys } from '../lib/queryKeys';
 /**
  * Custom hook to stream portfolio-scoped real-time events via Server-Sent Events (SSE)
@@ -29,7 +29,7 @@ export function usePortfolioEvents({ portfolioId, enabled = true }) {
         const controller = new AbortController();
         abortControllerRef.current = controller;
         try {
-            const response = await fetch(`/portfolios/${portfolioId}/events`, {
+            const response = await fetch(`${BASE_URL}/portfolios/${portfolioId}/events`, {
                 method: 'GET',
                 headers: {
                     Accept: 'text/event-stream',

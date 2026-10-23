@@ -12,6 +12,13 @@ describe("Phase 6: CORS and Authentication Rate-Limiting Tests", () => {
     await stopTestServer();
   });
 
+  test("database readiness endpoint confirms PostgreSQL connectivity", async () => {
+    const res = await apiRequest("/health/ready");
+
+    assert.equal(res.status, 200);
+    assert.equal(res.data.database, "connected");
+  });
+
   test("CORS allows requests from configured origin (http://localhost:5173)", async () => {
     const res = await apiRequest("/assets", {
       headers: {
@@ -61,6 +68,26 @@ describe("Phase 6: CORS and Authentication Rate-Limiting Tests", () => {
       res.headers.get("access-control-allow-methods") || "",
       /POST/,
     );
+  });
+
+  test("CORS allows the deployed frontend and auth preflight headers", async () => {
+    const res = await apiRequest("/auth/login", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://fin-pulse-lime.vercel.app",
+        "Access-Control-Request-Method": "POST",
+        "Access-Control-Request-Headers": "authorization,content-type",
+      },
+    });
+
+    assert.equal(res.status, 204);
+    assert.equal(
+      res.headers.get("access-control-allow-origin"),
+      "https://fin-pulse-lime.vercel.app",
+    );
+    assert.match(res.headers.get("access-control-allow-methods") || "", /POST/);
+    assert.match(res.headers.get("access-control-allow-headers") || "", /Authorization/i);
+    assert.match(res.headers.get("access-control-allow-headers") || "", /Content-Type/i);
   });
 
   test("CORS preflight OPTIONS request from disallowed origin returns 403 Forbidden", async () => {

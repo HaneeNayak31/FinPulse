@@ -1,14 +1,20 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { BASE_URL } from '../lib/api';
 const MarketContext = createContext(undefined);
 // Determine the WebSocket endpoint
 function getWebSocketUrl() {
     const envUrl = import.meta.env.VITE_WS_URL;
     if (envUrl && typeof envUrl === 'string' && envUrl.trim()) {
-        return envUrl.trim();
+        return envUrl.trim().replace(/\/+$/, '');
     }
-    // Default to Vite dev server ws proxy or same host
+    if (!import.meta.env.DEV && BASE_URL) {
+        const apiUrl = new URL(BASE_URL, window.location.origin);
+        apiUrl.protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+        return apiUrl.toString().replace(/\/+$/, '');
+    }
+    // In development, use Vite's WebSocket proxy.
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     return `${protocol}//${window.location.host}/ws`;
 }

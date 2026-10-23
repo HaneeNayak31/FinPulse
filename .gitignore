@@ -1,6 +1,7 @@
 # Environment variables and secrets
 .env
 .env.*
+!frontend/.env.production
 
 # Keep the example file only if it contains placeholders, not real secrets
 !.env.example

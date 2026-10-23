@@ -1,23 +1,10 @@
-// Determine API base URL.
-// When the frontend runs on a dev server (e.g. port 5173), direct requests to port 4000
-// are blocked by browser CORS preflight because the Express backend does not include CORS middleware.
-// In such environments, we fall back to relative paths so Vite's reverse proxy seamlessly handles them.
+// Use relative paths in development so Vite's proxy handles API requests.
+// Production uses the API origin injected by Vite at build time.
 function resolveBaseUrl() {
     const envUrl = (import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '');
-    if (typeof window !== 'undefined' && envUrl) {
-        try {
-            const parsed = new URL(envUrl, window.location.origin);
-            if (parsed.origin !== window.location.origin) {
-                return ''; // Route through Vite dev server proxy
-            }
-        }
-        catch {
-            // ignore
-        }
-    }
-    return envUrl;
+    return import.meta.env.DEV ? '' : envUrl;
 }
-const BASE_URL = resolveBaseUrl();
+export const BASE_URL = resolveBaseUrl();
 const TOKEN_KEY = 'finpulse_auth_token';
 export const tokenStorage = {
     get: () => {
@@ -107,7 +94,7 @@ async function request(path, options = {}) {
         }
         if (!errorMessage) {
             if (response.status === 502 || response.status === 503 || response.status === 504) {
-                errorMessage = 'FinPulse backend service is currently unreachable (502 Gateway). Ensure the server is running on port 4000.';
+                errorMessage = 'FinPulse backend service is currently unavailable. Please try again later.';
             }
             else if (response.status === 429) {
                 errorMessage = 'Too many requests. Please wait a few moments before retrying.';

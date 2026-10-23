@@ -60,10 +60,10 @@ The visual design is grounded in the restraint of market terminals and editorial
 ## 4. Architectural Highlights & Backend Integration
 
 ### 1. Reverse Proxy & CORS Architecture
-The Express backend operates without CORS middleware. The Vite development server provides reverse-proxying for `/auth`, `/portfolios`, `/assets`, and `/ws` to `http://localhost:4000`. This prevents browser cross-origin preflight errors during development while preserving the original Express backend code intact.
+In development, API requests use relative paths and Vite proxies `/auth`, `/portfolios`, `/assets`, and `/ws` to `http://localhost:4000`. Production builds use `VITE_API_BASE_URL` and `VITE_WS_URL` from `.env.production` or the Vercel build environment. The backend allows the exact deployed Vercel origin and any additional exact `CORS_ORIGIN` values, including authenticated preflight requests.
 
 ### 2. Real-Time WebSocket Telemetry
-- Connected to the root WebSocket endpoint (`ws://localhost:4000/` or proxied `/ws`).
+- Connected to the backend WebSocket endpoint (`ws://localhost:4000/` locally or the configured `wss://` production endpoint).
 - Subscribes to symbols: `{"type": "SUBSCRIBE", "symbol": "AAPL"}`.
 - Unsubscribes cleanly on unmount: `{"type": "UNSUBSCRIBE", "symbol": "AAPL"}`.
 - Receives live broadcasts: `{"event": "PRICE_UPDATED", "symbol": "AAPL", "price": 98.35, "timestamp": "..."}`.
@@ -71,10 +71,10 @@ The Express backend operates without CORS middleware. The Vite development serve
 - Reconnection Engine: Implements exponential backoff capped at 15s with random jitter. Upon reconnection, it automatically invalidates TanStack Query caches to guarantee no missed ticks.
 - Interactive Simulator Trigger: Each asset card and the top header include an instant **"Simulate Tick"** button that invokes `POST /assets/:symbol/simulate` so operators can test real-time server price updates at any moment.
 
-### 3. Server-Sent Events (SSE) Limitation
+### 3. Portfolio Server-Sent Events
 The backend provides an SSE endpoint at `GET /portfolios/:id/events`, protected by the `authenticate` middleware requiring `Authorization: Bearer <token>`.
 - Native browser `EventSource` **does not** support arbitrary custom HTTP headers.
-- Per strict security guidelines, token query parameters were not fabricated. The application leverages the official WebSocket streaming pipeline for real-time market data updates, which is fully operational.
+- The portfolio event hook uses `fetch` with a readable stream to attach the JWT in the `Authorization` header without putting the token in the URL.
 
 ### 4. Mathematical Precision (No Fabricated Data)
 - **Holding Market Value:** `quantity * current_price`
